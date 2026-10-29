@@ -1,0 +1,71 @@
+[1mdiff --git a/.gitignore b/.gitignore[m
+[1mindex 0fbe072..6a7da59 100644[m
+[1m--- a/.gitignore[m
+[1m+++ b/.gitignore[m
+[36m@@ -30,3 +30,6 @@[m [mlerna-debug.log*[m
+ *.sw?[m
+ .DS_Store[m
+ Thumbs.db[m
+[32m+[m
+[32m+[m[32m# Local AI agent configuration[m
+[32m+[m[32m.agents/[m
+[1mdiff --git a/README.md b/README.md[m
+[1mindex b43d8e5..adb29e1 100644[m
+[1m--- a/README.md[m
+[1m+++ b/README.md[m
+[36m@@ -64,7 +64,6 @@[m [me-commerce-lab/[m
+ ├── backend/                        # Node.js + Express REST API[m
+ │   ├── package.json[m
+ │   ├── .env.example                # Example environment variables[m
+[31m-│   ├── .env                        # Local configuration[m
+ │   └── src/[m
+ │       ├── server.js               # Express application entry point (Port 5000)[m
+ │       ├── config/[m
+[36m@@ -85,7 +84,6 @@[m [me-commerce-lab/[m
+     ├── vite.config.js              # Vite server & reverse-proxy configuration[m
+     ├── index.html                  # HTML shell with Google Fonts & metadata[m
+     ├── .env.example[m
+[31m-    ├── .env[m
+     └── src/[m
+         ├── index.css               # Design system & responsive styles[m
+         ├── main.jsx                # React DOM mount point[m
+[36m@@ -127,7 +125,7 @@[m [me-commerce-lab/[m
+ [m
+ ### Step B: Create the Database[m
+ ```bash[m
+[31m-createdb -U postgres ecommerce_db[m
+[32m+[m[32mcreatedb -U postgres genz_fits[m
+ ```[m
+ [m
+ ### Step C: Initialize Schema & Seed Data[m
+[36m@@ -135,7 +133,7 @@[m [mRun the automated initialization runner:[m
+ ```bash[m
+ npm run db:init[m
+ ```[m
+[31m-*(Or manually via psql: `psql -U postgres -d ecommerce_db -f database/schema.sql` and `psql -U postgres -d ecommerce_db -f database/seed.sql`)*[m
+[32m+[m[32m*(Or manually via psql: `psql -U postgres -d genz_fits -f database/schema.sql` and `psql -U postgres -d genz_fits -f database/seed.sql`)*[m
+ [m
+ ---[m
+ [m
+[1mdiff --git a/backend/.env.example b/backend/.env.example[m
+[1mindex 987c12a..cc7ba61 100644[m
+[1m--- a/backend/.env.example[m
+[1m+++ b/backend/.env.example[m
+[36m@@ -4,14 +4,14 @@[m [mNODE_ENV=development[m
+ [m
+ # PostgreSQL Connection Credentials[m
+ # Option 1: Full Connection String[m
+[31m-# DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ecommerce_db[m
+[32m+[m[32m# DATABASE_URL=postgresql://postgres:YOUR_POSTGRES_PASSWORD@localhost:5432/genz_fits[m
+ [m
+ # Option 2: Individual Parameters[m
+ PGUSER=postgres[m
+[31m-PGPASSWORD=postgres[m
+[32m+[m[32mPGPASSWORD=YOUR_POSTGRES_PASSWORD[m
+ PGHOST=localhost[m
+ PGPORT=5432[m
+[31m-PGDATABASE=ecommerce_db[m
+[32m+[m[32mPGDATABASE=genz_fits[m
+ [m
+ # Fallback Configuration[m
+ # When set to true, allows server to respond with fallback seed catalog if PostgreSQL is not active locally,[m
