@@ -6,15 +6,34 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "db:init": "node src/config/initDb.js"
+    "db:init": "node src/config/initDb.js",
+    "migrate:up": "node-pg-migrate -m migrations --envPath .env up",
+    "migrate:down": "node-pg-migrate -m migrations --envPath .env down",
+    "migrate:create": "node-pg-migrate -m migrations --envPath .env create",
+    "db:verify": "node src/scripts/verifyDb.js",
+    "test:auth": "node src/scripts/testAuth.js",
+    "test:integration": "node src/scripts/testFullIntegration.js",
+    "demo:traffic": "node src/scripts/generateTraffic.js"
   },
-  "keywords": ["ecommerce", "express", "postgresql", "rest-api"],
+  "keywords": [
+    "ecommerce",
+    "express",
+    "postgresql",
+    "rest-api"
+  ],
   "author": "MNIT Student",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "connect-pg-simple": "^10.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "pg": "^8.11.5"
+    "express-session": "^1.19.0",
+    "node-pg-migrate": "^9.0.0",
+    "pg": "^8.11.5",
+    "pino": "^10.4.0",
+    "pino-http": "^11.0.0",
+    "prom-client": "^15.1.3"
   }
 }

@@ -1,0 +1,17 @@
+# ==============================================================================
+# GenZ Fits (VÉLORA) — Grafana Dashboard Provider Provisioning
+# Automatically loads the preconfigured e-commerce dashboard into Grafana.
+# ==============================================================================
+
+apiVersion: 1
+
+providers:
+  - name: 'GenZ Fits Dashboards'
+    orgId: 1
+    folder: 'VÉLORA E-Commerce'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

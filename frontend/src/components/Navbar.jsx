@@ -1,7 +1,16 @@
 import React from 'react';
-import { ShoppingBag } from 'lucide-react';
+import { ShoppingBag, User, LogOut, Sparkles } from 'lucide-react';
 
-export default function Navbar({ health, onResetFilters }) {
+export default function Navbar({
+  health,
+  user,
+  cartItemCount = 0,
+  onOpenAuth,
+  onLogout,
+  onToggleCart,
+  activeView = 'catalog',
+  onResetFilters
+}) {
   const isConnected = health?.database?.connected;
   const isHealthy = health?.status === 'ok';
 
@@ -11,14 +20,21 @@ export default function Navbar({ health, onResetFilters }) {
       <div className="announcement-bar">
         <div className="announcement-content">
           <span className="announcement-dot"></span>
-          <span>COMPLIMENTARY EXPRESS SHIPPING | VÉLORA AUTUMN / WINTER COLLECTION</span>
+          <span>COMPLIMENTARY EXPRESS SHIPPING ACROSS INDIA | VÉLORA ATELIER EDITIONS</span>
         </div>
       </div>
 
       {/* Main sticky navigation header */}
       <header className="site-header">
         <div className="header-inner">
-          <div className="brand-wrapper" onClick={onResetFilters} role="button" tabIndex={0} aria-label="GenZ Fits Home">
+          {/* Brand mark */}
+          <div
+            className="brand-wrapper"
+            onClick={onResetFilters}
+            role="button"
+            tabIndex={0}
+            aria-label="GenZ Fits Home"
+          >
             <div className="brand-mark">V</div>
             <div className="brand-text-block">
               <span className="brand-title">GENZ FITS</span>
@@ -26,7 +42,7 @@ export default function Navbar({ health, onResetFilters }) {
             </div>
           </div>
 
-          <div className="header-actions">
+          <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {/* System / Database connection indicator */}
             <div
               className="status-indicator-badge"
@@ -46,15 +62,77 @@ export default function Navbar({ health, onResetFilters }) {
               </span>
             </div>
 
-            {/* Wardrobe preview indicator (Assignment Part 1 scope) */}
+            {/* Authentication Control: Logged In vs Guest */}
+            {user ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 12px',
+                    backgroundColor: 'var(--taupe-light)',
+                    borderRadius: 'var(--radius-full)',
+                    fontSize: '12px',
+                    color: 'var(--text-primary)',
+                    fontWeight: 500
+                  }}
+                  title={`Logged in as ${user.email}`}
+                >
+                  <User size={13} style={{ color: 'var(--burgundy-primary)' }} />
+                  <span>{user.name.split(' ')[0]}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={onLogout}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '6px 10px',
+                    background: 'none',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-sm)',
+                    fontSize: '11.5px',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer'
+                  }}
+                  title="Sign out of account"
+                  aria-label="Log out"
+                >
+                  <LogOut size={12} />
+                  <span>Exit</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="card-view-btn"
+                style={{ padding: '7px 12px', fontSize: '11.5px', backgroundColor: 'transparent' }}
+                onClick={() => onOpenAuth('login')}
+                aria-label="Sign in to your account"
+              >
+                <User size={13} />
+                <span>Sign In</span>
+              </button>
+            )}
+
+            {/* Interactive Wardrobe / Cart Button */}
             <button
-              className="card-view-btn"
-              style={{ padding: '8px 14px', fontSize: '11.5px' }}
-              onClick={() => alert('Wardrobe & Checkout are reserved for Part 2 per assignment specifications.')}
-              aria-label="View fashion wardrobe"
+              className={`card-view-btn ${activeView === 'cart' ? 'active-cart-btn' : ''}`}
+              style={{
+                padding: '8px 14px',
+                fontSize: '11.5px',
+                backgroundColor: activeView === 'cart' ? 'var(--burgundy-primary)' : 'var(--text-primary)',
+                color: '#ffffff',
+                border: 'none',
+                position: 'relative'
+              }}
+              onClick={onToggleCart}
+              aria-label={`View fashion wardrobe with ${cartItemCount} items`}
             >
               <ShoppingBag size={14} />
-              <span>Wardrobe (0)</span>
+              <span>Wardrobe ({cartItemCount})</span>
             </button>
           </div>
         </div>

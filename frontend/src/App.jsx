@@ -4,9 +4,22 @@ import HeroBanner from './components/HeroBanner';
 import SearchAndFilter from './components/SearchAndFilter';
 import ProductGrid from './components/ProductGrid';
 import ProductDetailModal from './components/ProductDetailModal';
+import CartPage from './components/CartPage';
+import AuthModal from './components/AuthModal';
 import { LoadingSkeletonGrid, EmptyState, ErrorState } from './components/StatusStates';
 import Footer from './components/Footer';
-import { fetchProducts, fetchProductById, fetchHealth } from './services/api';
+import {
+  fetchProducts,
+  fetchProductById,
+  fetchHealth,
+  fetchCurrentUser,
+  logoutUser,
+  fetchCart,
+  addToCart,
+  updateCartItemQuantity,
+  removeFromCart,
+  clearCart
+} from './services/api';
 
 export default function App() {
   const [products, setProducts] = useState([]);
@@ -19,7 +32,25 @@ export default function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [health, setHealth] = useState(null);
 
-  // Debounce search input by 300ms to avoid spamming the backend API
+  // Authentication & Cart State
+  const [user, setUser] = useState(null);
+  const [cart, setCart] = useState({ items: [], itemCount: 0, subtotal: '0.00', total: '0.00' });
+  const [cartLoading, setCartLoading] = useState(false);
+  const [cartError, setCartError] = useState(null);
+  const [activeView, setActiveView] = useState('catalog'); // 'catalog' or 'cart'
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState('login');
+  const [toastMessage, setToastMessage] = useState(null);
+
+  // Show temporary toast feedback
+  const showToast = (message, type = 'info') => {
+    setToastMessage({ message, type });
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3500);
+  };
+
+  // Debounce search input by 300ms
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
@@ -41,6 +72,41 @@ export default function App() {
     checkHealth();
     return () => { isMounted = false; };
   }, []);
+
+  // Check authenticated user on mount
+  const checkAuth = useCallback(async () => {
+    try {
+      const res = await fetchCurrentUser();
+      if (res.data?.authenticated && res.data?.user) {
+        setUser(res.data.user);
+        // Load cart for authenticated user
+        loadCart();
+      } else {
+        setUser(null);
+        setCart({ items: [], itemCount: 0, subtotal: '0.00', total: '0.00' });
+      }
+    } catch (err) {
+      setUser(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  // Fetch user cart
+  const loadCart = async () => {
+    setCartLoading(true);
+    setCartError(null);
+    try {
+      const res = await fetchCart();
+      setCart(res.data || { items: [], itemCount: 0, subtotal: '0.00', total: '0.00' });
+    } catch (err) {
+      setCartError(err.message || 'Failed to retrieve shopping cart.');
+    } finally {
+      setCartLoading(false);
+    }
+  };
 
   // Fetch products when filters, category, or sorting changes
   const loadProducts = useCallback(async () => {
@@ -71,75 +137,216 @@ export default function App() {
     setDebouncedSearch('');
     setCategory('all');
     setSortBy('newest');
+    setActiveView('catalog');
   };
 
-  // Open product details modal (and verify GET /api/products/:id)
+  // Open product details modal
   const handleSelectProduct = async (product) => {
     try {
-      // Fetch full individual product detail from backend to verify endpoint
       const detailRes = await fetchProductById(product.id);
       setSelectedProduct(detailRes.data || product);
     } catch (err) {
-      // Fallback to already present product data if detail endpoint had transient error
       setSelectedProduct(product);
     }
   };
 
+  // Add product to cart handler
+  const handleAddToCart = async (product, size = 'M', quantity = 1) => {
+    if (!user) {
+      showToast('Please sign in to curate pieces into your wardrobe.', 'warning');
+      setAuthModalMode('login');
+      setAuthModalOpen(true);
+      return;
+    }
+
+    try {
+      const res = await addToCart({
+        productId: product.id,
+        quantity,
+        size
+      });
+      setCart(res.data);
+      showToast(`Added "${product.name}" (${size}) to your wardrobe!`, 'success');
+    } catch (err) {
+      showToast(err.message || 'Failed to add piece to wardrobe.', 'error');
+    }
+  };
+
+  // Update item quantity in cart
+  const handleUpdateQuantity = async (productId, newQuantity, size) => {
+    try {
+      const res = await updateCartItemQuantity({
+        productId,
+        quantity: newQuantity,
+        size
+      });
+      setCart(res.data);
+    } catch (err) {
+      showToast(err.message || 'Failed to update quantity.', 'error');
+    }
+  };
+
+  // Remove item from cart
+  const handleRemoveItem = async (productId, size) => {
+    try {
+      const res = await removeFromCart({ productId, size });
+      setCart(res.data);
+      showToast('Piece removed from your wardrobe.', 'info');
+    } catch (err) {
+      showToast(err.message || 'Failed to remove piece.', 'error');
+    }
+  };
+
+  // Clear cart
+  const handleClearCart = async () => {
+    if (!window.confirm('Are you sure you want to clear your entire wardrobe?')) return;
+    try {
+      const res = await clearCart();
+      setCart(res.data);
+      showToast('Your wardrobe has been cleared.', 'info');
+    } catch (err) {
+      showToast(err.message || 'Failed to clear wardrobe.', 'error');
+    }
+  };
+
+  // Logout handler
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      setUser(null);
+      setCart({ items: [], itemCount: 0, subtotal: '0.00', total: '0.00' });
+      setActiveView('catalog');
+      showToast('You have been logged out.', 'info');
+    } catch (err) {
+      showToast(err.message || 'Logout failed.', 'error');
+    }
+  };
+
+  // Authentication success handler
+  const handleAuthSuccess = (authenticatedUser) => {
+    setUser(authenticatedUser);
+    loadCart();
+    showToast(`Welcome to VÉLORA, ${authenticatedUser.name.split(' ')[0]}!`, 'success');
+  };
+
   return (
     <div className="app-container">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            zIndex: 9999,
+            padding: '12px 20px',
+            backgroundColor: toastMessage.type === 'error' ? 'var(--burgundy-primary)' : '#111111',
+            color: '#ffffff',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: '13px',
+            boxShadow: 'var(--shadow-lg)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            animation: 'slideUp 0.3s ease'
+          }}
+        >
+          <span>{toastMessage.message}</span>
+        </div>
+      )}
+
       {/* Header and Brand Bar */}
-      <Navbar health={health} onResetFilters={handleResetFilters} />
+      <Navbar
+        health={health}
+        user={user}
+        cartItemCount={cart?.itemCount || 0}
+        onOpenAuth={(mode) => {
+          setAuthModalMode(mode);
+          setAuthModalOpen(true);
+        }}
+        onLogout={handleLogout}
+        onToggleCart={() => setActiveView(v => v === 'cart' ? 'catalog' : 'cart')}
+        activeView={activeView}
+        onResetFilters={handleResetFilters}
+      />
 
-      {/* Editorial Hero Banner */}
-      <HeroBanner totalProducts={products.length || 12} />
-
-      {/* Main Content Area / Catalogue Section */}
-      <main className="main-content" id="catalogue-section">
-        {/* Search, Filter, Sort Controls */}
-        <SearchAndFilter
-          search={search}
-          setSearch={setSearch}
-          category={category}
-          setCategory={setCategory}
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          totalResults={products.length}
-          onReset={handleResetFilters}
-        />
-
-        {/* Error State Banner */}
-        {error && (
-          <ErrorState error={error} onRetry={loadProducts} />
-        )}
-
-        {/* Loading State Skeleton */}
-        {loading && <LoadingSkeletonGrid count={6} />}
-
-        {/* Empty State */}
-        {!loading && !error && products.length === 0 && (
-          <EmptyState
-            search={debouncedSearch}
-            category={category}
-            onReset={handleResetFilters}
+      {/* Main Content View Switcher */}
+      {activeView === 'cart' ? (
+        <main className="main-content">
+          <CartPage
+            cart={cart}
+            loading={cartLoading}
+            error={cartError}
+            onUpdateQuantity={handleUpdateQuantity}
+            onRemoveItem={handleRemoveItem}
+            onClearCart={handleClearCart}
+            onContinueShopping={() => setActiveView('catalog')}
           />
-        )}
+        </main>
+      ) : (
+        <>
+          {/* Editorial Hero Banner */}
+          <HeroBanner totalProducts={products.length || 12} />
 
-        {/* Product Catalog Grid */}
-        {!loading && !error && products.length > 0 && (
-          <ProductGrid
-            products={products}
-            onSelectProduct={handleSelectProduct}
-          />
-        )}
-      </main>
+          {/* Main Catalogue Section */}
+          <main className="main-content" id="catalogue-section">
+            {/* Search, Filter, Sort Controls */}
+            <SearchAndFilter
+              search={search}
+              setSearch={setSearch}
+              category={category}
+              setCategory={setCategory}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              totalResults={products.length}
+              onReset={handleResetFilters}
+            />
+
+            {/* Error State Banner */}
+            {error && (
+              <ErrorState error={error} onRetry={loadProducts} />
+            )}
+
+            {/* Loading State Skeleton */}
+            {loading && <LoadingSkeletonGrid count={6} />}
+
+            {/* Empty State */}
+            {!loading && !error && products.length === 0 && (
+              <EmptyState
+                search={debouncedSearch}
+                category={category}
+                onReset={handleResetFilters}
+              />
+            )}
+
+            {/* Product Catalog Grid */}
+            {!loading && !error && products.length > 0 && (
+              <ProductGrid
+                products={products}
+                onSelectProduct={handleSelectProduct}
+                onAddToCart={handleAddToCart}
+              />
+            )}
+          </main>
+        </>
+      )}
 
       {/* Product Details Modal View */}
       {selectedProduct && (
         <ProductDetailModal
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
+          onAddToCart={handleAddToCart}
         />
       )}
+
+      {/* Authentication Modal View */}
+      <AuthModal
+        isOpen={authModalOpen}
+        initialMode={authModalMode}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
+      />
 
       {/* Footer */}
       <Footer />

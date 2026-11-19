@@ -9,7 +9,13 @@
     "dev:frontend": "npm run dev --prefix frontend",
     "start:backend": "npm start --prefix backend",
     "build:frontend": "npm run build --prefix frontend",
-    "db:init": "node backend/src/config/initDb.js"
+    "db:init": "node backend/src/config/initDb.js",
+    "migrate:up": "npm run --prefix backend migrate:up",
+    "migrate:down": "npm run --prefix backend migrate:down",
+    "db:verify": "npm run --prefix backend db:verify",
+    "test:auth": "npm run --prefix backend test:auth",
+    "test:integration": "npm run --prefix backend test:integration",
+    "demo:traffic": "npm run --prefix backend demo:traffic"
   },
   "keywords": ["ecommerce", "college-lab", "react", "express", "postgresql"],
   "author": "MNIT Student",

@@ -1299,3 +1299,44 @@ body {
     padding: 26px 20px;
   }
 }
+
+/* Part 2 Extensions: Auth Modal & Cart Enhancements */
+.auth-modal-dialog {
+  display: block !important;
+  max-width: 440px !important;
+  grid-template-columns: 1fr !important;
+  margin: auto;
+}
+
+.active-cart-btn {
+  background-color: var(--burgundy-primary) !important;
+  color: #ffffff !important;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.96);
+  }
+}
+
+@media (max-width: 820px) {
+  .cart-page-container > div:last-child {
+    grid-template-columns: 1fr !important;
+  }
+}

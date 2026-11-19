@@ -1,7 +1,11 @@
-import React, { useEffect } from 'react';
-import { X, Star, CheckCircle2, ShoppingBag, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Star, CheckCircle2, ShoppingBag, Sparkles, Plus, Minus } from 'lucide-react';
 
-export default function ProductDetailModal({ product, onClose }) {
+export default function ProductDetailModal({ product, onClose, onAddToCart }) {
+  const [selectedSize, setSelectedSize] = useState('M');
+  const [quantity, setQuantity] = useState(1);
+  const [addedNotice, setAddedNotice] = useState(false);
+
   // Close modal on Escape key press
   useEffect(() => {
     function handleKeyDown(e) {
@@ -12,6 +16,24 @@ export default function ProductDetailModal({ product, onClose }) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
+
+  // Extract available sizes from dimensions string if present, e.g. "Sizes: XS, S, M, L, XL"
+  const availableSizes = React.useMemo(() => {
+    if (!product?.dimensions) return ['S', 'M', 'L', 'XL'];
+    const match = product.dimensions.match(/Sizes?:\s*([A-Za-z0-9,\s]+)/i);
+    if (match && match[1]) {
+      return match[1].split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+    }
+    return ['S', 'M', 'L', 'XL'];
+  }, [product]);
+
+  useEffect(() => {
+    if (availableSizes.length > 0) {
+      setSelectedSize(availableSizes.includes('M') ? 'M' : availableSizes[0]);
+    }
+    setQuantity(1);
+    setAddedNotice(false);
+  }, [product, availableSizes]);
 
   if (!product) return null;
 
@@ -24,6 +46,14 @@ export default function ProductDetailModal({ product, onClose }) {
 
   const isLowStock = product.stock > 0 && product.stock <= 10;
   const isOutOfStock = product.stock === 0;
+
+  const handleAdd = () => {
+    if (onAddToCart) {
+      onAddToCart(product, selectedSize, quantity);
+      setAddedNotice(true);
+      setTimeout(() => setAddedNotice(false), 2000);
+    }
+  };
 
   return (
     <div
@@ -86,6 +116,80 @@ export default function ProductDetailModal({ product, onClose }) {
 
           <p className="modal-description-text">{product.description}</p>
 
+          {/* Interactive Size Selection */}
+          <div style={{ margin: '16px 0' }}>
+            <span style={{ display: 'block', fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', color: 'var(--text-secondary)' }}>
+              Select Size & Silhouette
+            </span>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {availableSizes.map(size => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => setSelectedSize(size)}
+                  style={{
+                    padding: '6px 14px',
+                    border: selectedSize === size ? '1.5px solid var(--burgundy-primary)' : '1px solid var(--border-subtle)',
+                    backgroundColor: selectedSize === size ? 'var(--burgundy-tint)' : 'var(--bg-card)',
+                    color: selectedSize === size ? 'var(--burgundy-primary)' : 'var(--text-primary)',
+                    borderRadius: 'var(--radius-xs)',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Quantity Selector */}
+          {!isOutOfStock && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+                Quantity:
+              </span>
+              <div style={{ display: 'inline-flex', alignItems: 'center', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-xs)' }}>
+                <button
+                  type="button"
+                  disabled={quantity <= 1}
+                  onClick={() => setQuantity(q => Math.max(1, q - 1))}
+                  style={{
+                    padding: '6px 10px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: quantity <= 1 ? 'not-allowed' : 'pointer',
+                    color: quantity <= 1 ? 'var(--text-muted)' : 'var(--text-primary)'
+                  }}
+                >
+                  <Minus size={13} />
+                </button>
+                <span style={{ minWidth: '32px', textAlign: 'center', fontSize: '13px', fontWeight: 600 }}>
+                  {quantity}
+                </span>
+                <button
+                  type="button"
+                  disabled={quantity >= product.stock}
+                  onClick={() => setQuantity(q => Math.min(product.stock, q + 1))}
+                  style={{
+                    padding: '6px 10px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: quantity >= product.stock ? 'not-allowed' : 'pointer',
+                    color: quantity >= product.stock ? 'var(--text-muted)' : 'var(--text-primary)'
+                  }}
+                >
+                  <Plus size={13} />
+                </button>
+              </div>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                ({product.stock} available in atelier)
+              </span>
+            </div>
+          )}
+
           {/* Technical Specifications Table */}
           <table className="modal-specs-table">
             <tbody>
@@ -139,10 +243,22 @@ export default function ProductDetailModal({ product, onClose }) {
           <div className="modal-actions-bar">
             <button
               className="btn-primary-action"
-              onClick={() => alert(`Piece recorded for your wardrobe: ${product.name} (SKU: GZF-${product.id.toString().padStart(4, '0')}). Note: Part 1 focuses on catalog, search, and API inspection.`)}
+              disabled={isOutOfStock}
+              onClick={handleAdd}
+              style={{
+                opacity: isOutOfStock ? 0.6 : 1,
+                cursor: isOutOfStock ? 'not-allowed' : 'pointer',
+                backgroundColor: addedNotice ? '#2e7d32' : 'var(--burgundy-primary)'
+              }}
             >
               <ShoppingBag size={16} />
-              <span>Add to Wardrobe</span>
+              <span>
+                {isOutOfStock
+                  ? 'Out of Stock'
+                  : addedNotice
+                  ? 'Piece Added to Wardrobe!'
+                  : `Add to Wardrobe · Size ${selectedSize}`}
+              </span>
             </button>
           </div>
         </div>

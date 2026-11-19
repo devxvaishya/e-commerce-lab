@@ -1,5 +1,7 @@
 const { Pool } = require('pg');
-require('dotenv').config();
+const path = require('path');
+const { logger } = require('./logger');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 // PostgreSQL connection configuration
 const poolConfig = process.env.DATABASE_URL
@@ -10,7 +12,7 @@ const poolConfig = process.env.DATABASE_URL
   : {
       user: process.env.PGUSER || 'postgres',
       host: process.env.PGHOST || 'localhost',
-      database: process.env.PGDATABASE || 'ecommerce_db',
+      database: process.env.PGDATABASE || 'genz_fits',
       password: process.env.PGPASSWORD || 'postgres',
       port: parseInt(process.env.PGPORT, 10) || 5432,
       connectionTimeoutMillis: 3000,
@@ -54,7 +56,7 @@ async function query(text, params) {
     }
     return res;
   } catch (err) {
-    console.error(`[Database Query Error] ${err.message}`);
+    logger.error({ err: err.message, query: text.slice(0, 100) }, 'Database query error');
     throw err;
   }
 }

@@ -1,7 +1,7 @@
 import React from 'react';
 import ProductCard from './ProductCard';
 
-export default function ProductGrid({ products, onSelectProduct }) {
+export default function ProductGrid({ products, onSelectProduct, onAddToCart }) {
   return (
     <div className="product-grid" role="region" aria-label="Product list">
       {products.map((product) => (
@@ -9,6 +9,7 @@ export default function ProductGrid({ products, onSelectProduct }) {
           key={product.id}
           product={product}
           onSelect={onSelectProduct}
+          onAddToCart={onAddToCart}
         />
       ))}
     </div>

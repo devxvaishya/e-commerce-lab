@@ -46,7 +46,76 @@ function validateProductQueryParams(req, res, next) {
   next();
 }
 
+// Helper to validate email format
+function isValidEmail(email) {
+  if (typeof email !== 'string') return false;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email.trim()) && email.length <= 180;
+}
+
+// Validate user registration payload
+function validateRegister(req, res, next) {
+  const { name, email, password } = req.body || {};
+
+  if (!name || typeof name !== 'string' || name.trim().length < 2 || name.trim().length > 100) {
+    return res.status(400).json({
+      success: false,
+      error: 'Name is required and must be between 2 and 100 characters.'
+    });
+  }
+
+  if (!email || !isValidEmail(email)) {
+    return res.status(400).json({
+      success: false,
+      error: 'A valid email address is required.'
+    });
+  }
+
+  if (!password || typeof password !== 'string' || password.length < 6 || password.length > 128) {
+    return res.status(400).json({
+      success: false,
+      error: 'Password is required and must be between 6 and 128 characters.'
+    });
+  }
+
+  req.validatedRegister = {
+    name: name.trim(),
+    email: email.trim().toLowerCase(),
+    password
+  };
+
+  next();
+}
+
+// Validate user login payload
+function validateLogin(req, res, next) {
+  const { email, password } = req.body || {};
+
+  if (!email || !isValidEmail(email)) {
+    return res.status(400).json({
+      success: false,
+      error: 'A valid email address is required.'
+    });
+  }
+
+  if (!password || typeof password !== 'string' || password.length === 0) {
+    return res.status(400).json({
+      success: false,
+      error: 'Password is required.'
+    });
+  }
+
+  req.validatedLogin = {
+    email: email.trim().toLowerCase(),
+    password
+  };
+
+  next();
+}
+
 module.exports = {
   validateProductId,
-  validateProductQueryParams
+  validateProductQueryParams,
+  validateRegister,
+  validateLogin
 };

@@ -1,4 +1,5 @@
 // Centralized error handling middleware
+const { logger } = require('../config/logger');
 
 function notFoundHandler(req, res, next) {
   res.status(404).json({
@@ -8,10 +9,21 @@ function notFoundHandler(req, res, next) {
 }
 
 function globalErrorHandler(err, req, res, next) {
-  console.error('[Unhandled Error]', err);
-
-  const statusCode = err.statusCode || 500;
+  const statusCode = err.statusCode || (err.status && typeof err.status === 'number' ? err.status : 500);
   const message = err.message || 'Internal Server Error';
+
+  // Log unexpected exception with request ID
+  logger.error({
+    err: {
+      message: err.message,
+      stack: err.stack,
+      code: err.code
+    },
+    reqId: req.id,
+    method: req.method,
+    url: req.originalUrl,
+    statusCode
+  }, 'Unhandled application exception');
 
   res.status(statusCode).json({
     success: false,

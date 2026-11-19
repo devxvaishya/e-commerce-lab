@@ -33,3 +33,7 @@ Thumbs.db
 
 # Local AI agent configuration
 .agents/
+
+# Docker and Monitoring local data
+prometheus_data/
+grafana_data/

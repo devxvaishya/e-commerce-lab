@@ -1,0 +1,27 @@
+# ==============================================================================
+# GenZ Fits (VÉLORA Collection) — Prometheus Configuration
+# Scrapes Node.js Express backend metrics running on the Windows host.
+# ==============================================================================
+
+global:
+  scrape_interval: 5s       # Scrape every 5s for responsive live demos
+  evaluation_interval: 5s   # Evaluate rules every 5s
+
+scrape_configs:
+  # Express Backend Metrics Target
+  - job_name: 'genz-fits-backend'
+    scrape_interval: 5s
+    scrape_timeout: 4s
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['host.docker.internal:5000']
+        labels:
+          app: 'genz-fits'
+          collection: 'velora-fashion'
+          environment: 'development'
+
+  # Self-monitoring for Prometheus server
+  - job_name: 'prometheus'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['localhost:9090']
